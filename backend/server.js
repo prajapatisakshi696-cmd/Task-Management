@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import authRoutes from './routes/authRoutes.js';
-import tasksRoutes from './Routes/tasksRoutes.js';
+import tasksRoutes from './routes/tasksRoutes.js';
 
 dotenv.config();
 // Initialize Express app
