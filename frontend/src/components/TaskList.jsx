@@ -10,6 +10,7 @@ import {
   Plus,
 } from "lucide-react";
 import TaskForm from "../components/TaskForm";
+import Loading from "./Loading";
 
 // Simple status styles helper
 const getStatusStyles = (status) => {
@@ -36,11 +37,13 @@ const Toast = ({ message, type, onClose }) => {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border ${
-        type === "success"
-          ? "bg-green-50 border-green-200 text-green-800"
-          : "bg-red-50 border-red-200 text-red-800"
-      }`}>
+      <div
+        className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border ${
+          type === "success"
+            ? "bg-green-50 border-green-200 text-green-800"
+            : "bg-red-50 border-red-200 text-red-800"
+        }`}
+      >
         {type === "success" ? (
           <CheckCircle size={20} className="text-green-600" />
         ) : (
@@ -69,6 +72,8 @@ const TaskList = ({
   const [loading, setLoading] = useState(true);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [toast, setToast] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
 
   const tasksPerPage = 3;
 
@@ -91,11 +96,9 @@ const TaskList = ({
     }
   }, []);
 
-  // ✅ Fixed useEffect - fetch tasks when refreshTasks changes
   useEffect(() => {
     fetchTasks();
-  }, [refreshTasks]);
-
+  }, [fetchTasks, refreshTasks]);
   const safeSearchTerm = (searchTerm ?? "").toLowerCase();
 
   const filteredTasks = tasks
@@ -104,13 +107,16 @@ const TaskList = ({
         .toLowerCase()
         .includes(safeSearchTerm);
 
-      const matchesFilter = !filter || filter === "all" || task.status === filter;
+      const matchesFilter =
+        !filter || filter === "all" || task.status === filter;
 
       return matchesSearch && matchesFilter;
     })
     .sort((a, b) => {
-      if (sortBy === "newest") return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-      if (sortBy === "oldest") return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+      if (sortBy === "newest")
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      if (sortBy === "oldest")
+        return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
       if (sortBy === "az") return (a.title || "").localeCompare(b.title || "");
       if (sortBy === "za") return (b.title || "").localeCompare(a.title || "");
       return 0;
@@ -166,9 +172,12 @@ const TaskList = ({
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      setTasks(tasks.map((t) => (t._id === task._id ? res.data : t)));
+      setTasks(tasks.map((task) => (task._id === id ? res.data : task)));
       setToast({
-        message: newStatus === "completed" ? "Task marked as complete!" : "Task marked as pending!",
+        message:
+          newStatus === "completed"
+            ? "Task marked as complete!"
+            : "Task marked as pending!",
         type: "success",
       });
     } catch (err) {
@@ -192,23 +201,23 @@ const TaskList = ({
   // handler for when task is added
   const handleTaskAdded = () => {
     setShowTaskForm(false);
-    fetchTasks(); 
+    fetchTasks();
     setToast({ message: "Task created successfully!", type: "success" });
   };
 
   if (loading && tasks.length === 0) {
-    return (
-      <div className="w-full max-w-7xl mx-auto p-6 flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
+    return <Loading text="Loading Tasks..." />;
   }
 
   return (
     <div className="w-full max-w-7xl mx-auto p-6">
       {/* Toast Notification */}
       {toast && (
-        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
 
       {/* Task Form Modal */}
@@ -224,7 +233,9 @@ const TaskList = ({
 
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl">
               <h3 className="text-lg font-bold text-white">Create New Task</h3>
-              <p className="text-indigo-200 text-sm">Fill in the details below</p>
+              <p className="text-indigo-200 text-sm">
+                Fill in the details below
+              </p>
             </div>
 
             <div className="p-6">
@@ -244,7 +255,9 @@ const TaskList = ({
               <Plus className="w-4 h-4" />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Tasks Yet</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            No Tasks Yet
+          </h2>
           <p className="text-gray-500 text-center max-w-md mb-8">
             Create your first task to start organizing your work.
           </p>
@@ -268,7 +281,9 @@ const TaskList = ({
               <div className="p-5 flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className={`px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md border ${getStatusStyles(task.status)}`}>
+                    <span
+                      className={`px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md border ${getStatusStyles(task.status)}`}
+                    >
                       {task.status}
                     </span>
                     <span className="text-xs text-gray-400">
@@ -311,10 +326,14 @@ const TaskList = ({
                     </div>
                   ) : (
                     <>
-                      <h3 className={`text-lg font-semibold text-gray-900 mb-1 ${task.status === "completed" ? "line-through text-gray-500" : ""}`}>
+                      <h3
+                        className={`text-lg font-semibold text-gray-900 mb-1 ${task.status === "completed" ? "line-through text-gray-500" : ""}`}
+                      >
                         {task.title}
                       </h3>
-                      <p className={`text-sm text-gray-500 line-clamp-2 ${task.description ? "" : "italic"}`}>
+                      <p
+                        className={`text-sm text-gray-500 line-clamp-2 ${task.description ? "" : "italic"}`}
+                      >
                         {task.description || "No description provided"}
                       </p>
                     </>
@@ -339,8 +358,11 @@ const TaskList = ({
                     <CheckCircle size={16} />
                   </button>
                   <button
-                    onClick={() => handleDelete(task._id)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                    onClick={() => {
+                      setTaskToDelete(task._id);
+                      setShowDeleteModal(true);
+                    }}
+                    className="h-10 w-10 rounded-lg border border-gray-200 text-red-500 flex items-center justify-center hover:bg-red-50 transition"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -352,11 +374,15 @@ const TaskList = ({
           {totalPages > 1 && (
             <div className="flex justify-between items-center pt-4">
               <p className="text-sm text-gray-500">
-                Showing {indexOfFirstTask + 1} to {Math.min(indexOfLastTask, filteredTasks.length)} of {filteredTasks.length}
+                Showing {indexOfFirstTask + 1} to{" "}
+                {Math.min(indexOfLastTask, filteredTasks.length)} of{" "}
+                {filteredTasks.length}
               </p>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
                   disabled={currentPage === 1}
                   className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                 >
@@ -376,7 +402,9 @@ const TaskList = ({
                   </button>
                 ))}
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
                   disabled={currentPage === totalPages}
                   className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                 >
@@ -385,6 +413,44 @@ const TaskList = ({
               </div>
             </div>
           )}
+        </div>
+      )}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl w-[400px] p-6 shadow-2xl">
+            <h2 className="text-xl font-semibold text-gray-800">Delete Task</h2>
+
+            <p className="text-gray-500 mt-3">
+              Are you sure you want to delete this task?
+            </p>
+
+            <p className="text-red-500 text-sm mt-2">
+              This action cannot be undone.
+            </p>
+
+            <div className="flex justify-end gap-3 mt-8">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setTaskToDelete(null);
+                }}
+                className="px-5 py-2 rounded-lg border hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => {
+                  handleDelete(taskToDelete);
+                  setShowDeleteModal(false);
+                  setTaskToDelete(null);
+                }}
+                className="px-5 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

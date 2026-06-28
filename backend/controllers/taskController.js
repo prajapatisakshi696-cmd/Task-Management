@@ -11,46 +11,73 @@ export const getTasks = async (req, res) => {
   }
 };
 
-// Create new task
 export const createTask = async (req, res) => {
   try {
-    const { title, description, status } = req.body;
+    const {
+      title,
+      description,
+      dueDate,
+      status,
+    } = req.body;
 
     const task = new Task({
       title,
       description,
+      dueDate,
       status: status || "pending",
       userId: req.user.id,
     });
 
     await task.save();
+
     res.status(201).json(task);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 };
 
-// Update task
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title } =req.data;
+
+    const {
+      title,
+      description,
+      dueDate,
+      status,
+    } = req.body;
 
     const task = await Task.findOneAndUpdate(
-      { _id: id, userId: req.user.id },
-      { title, description, status },
-      { new: true }
+      {
+        _id: id,
+        userId: req.user.id,
+      },
+      {
+        title,
+        description,
+        dueDate,
+        status,
+      },
+      {
+        new: true,
+      }
     );
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      return res.status(404).json({
+        message: "Task not found",
+      });
     }
 
     res.json(task);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 };
 
@@ -71,26 +98,33 @@ export const deleteTask = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-// Patch task (partial update)
 export const patchTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
 
     const task = await Task.findOneAndUpdate(
-      { _id: id, userId: req.user.id },
-      { $set: updates },
-      { new: true }
+      {
+        _id: id,
+        userId: req.user.id,
+      },
+      req.body,
+      {
+        new: true,
+      }
     );
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      return res.status(404).json({
+        message: "Task not found",
+      });
     }
 
     res.json(task);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 };
 
