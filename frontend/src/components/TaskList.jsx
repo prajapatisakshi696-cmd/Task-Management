@@ -172,7 +172,7 @@ const TaskList = ({
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      setTasks(tasks.map((task) => (task._id === id ? res.data : task)));
+      setTasks(tasks.map((t) => (t._id === task._id ? res.data : t)));
       setToast({
         message:
           newStatus === "completed"
